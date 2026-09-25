@@ -13,7 +13,39 @@ python -m unittest -v
 
 The default corpus directory is the supplied assignment location. For another location, set `KNOWLEDGE_BASE_DIR` or pass `--data-dir`.
 
-To enable generation, set `OPENAI_API_KEY`; any OpenAI-compatible service works with `OPENAI_BASE_URL` and `LLM_MODEL`. Without a key, the app returns a source-backed excerpt, keeping the prototype runnable and auditable offline.
+## AI-generated responses
+
+The assistant always retrieves company evidence first, then an OpenAI model writes the customer-facing reply from that evidence. This is not a hard-coded response: the AI creates the wording while retrieval keeps policy answers grounded.
+
+Set a replacement API key in your terminal only—never paste it into `app.py`, `learnforge.py`, Git, or a committed `.env` file:
+
+```bash
+export OPENAI_API_KEY="your-replacement-key"
+export LLM_MODEL="gpt-5-mini"
+python app.py --require-ai --question "My course progress is not saving."
+```
+
+The application uses the OpenAI Responses API with `store: false`. Each result visibly reports one of these modes:
+
+- `AI LLM grounded answer — Provider (model)` — an LLM wrote the response using retrieved company evidence.
+- `Retrieval fallback — AI unavailable` — no API key was configured, so a source excerpt was returned.
+- `Escalated — ...` — evidence was insufficient/conflicting or the AI request failed.
+
+`OPENAI_BASE_URL` can be set for a compatible endpoint. Without a key, the app remains runnable and auditable in retrieval-fallback mode.
+
+### Groq
+
+Groq works automatically with its own key; do not set `OPENAI_API_KEY` for this mode:
+
+```bash
+export GROQ_API_KEY="your-new-groq-key"
+export LLM_MODEL="openai/gpt-oss-20b"
+python app.py --require-ai --question "My course progress is not saving."
+```
+
+The app detects `GROQ_API_KEY`, uses `https://api.groq.com/openai/v1`, and calls its compatible Responses API. `llama-3.3-70b-versatile` is deprecated, so use `openai/gpt-oss-20b` or `openai/gpt-oss-120b` instead.
+
+The request includes an explicit application `User-Agent`, which avoids Groq edge-layer rejection of Python's default `urllib` signature.
 
 ## Architecture
 

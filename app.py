@@ -25,13 +25,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run the LearnForge support RAG prototype.")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA)
     parser.add_argument("--question", help="Answer one question and exit.")
+    parser.add_argument("--require-ai", action="store_true", help="Require OPENAI_API_KEY instead of using retrieval fallback.")
     args = parser.parse_args()
     assistant = build_assistant(args.data_dir)
+    if args.require_ai and assistant.generator is None:
+        parser.error("--require-ai needs OPENAI_API_KEY in the environment. Never put the key in source code.")
     conversation = Conversation()
 
     def reply(question: str) -> None:
         result = assistant.answer(question, conversation)
         print(f"\n{result.answer}\n")
+        print(f"Response mode: {result.response_mode}")
         print(f"Decision: {result.decision} | confidence: {result.confidence:.0%}")
         print("Sources: " + ", ".join(result.sources))
 
